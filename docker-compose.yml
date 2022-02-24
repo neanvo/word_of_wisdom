@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  server:
+    image: wow-server
+    ports:
+      - "7777:7777"
+    environment:
+      RUST_LOG: "info"
+
+  client:
+    image: wow-client
+    environment:
+      RUST_LOG: "info"
+    network_mode: host
+    depends_on:
+      - server

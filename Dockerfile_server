@@ -1,0 +1,29 @@
+FROM rust:alpine3.15 as builder
+
+RUN apk add --no-cache musl-dev
+WORKDIR /usr/bin/app
+COPY . .
+RUN cargo build --release --bin server
+
+FROM debian:buster-slim as runner
+
+ARG _PORT=7777
+ARG _QUOTES_PATH="/usr/local/bin/static/quotes.json"
+
+RUN apt-get update && \
+    apt-get install -y dumb-init && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/
+
+COPY --from=builder /usr/bin/app/target/release /usr/local/bin
+COPY --from=builder /usr/bin/app/server/static /usr/local/bin/static
+RUN chmod +x /usr/local/bin
+
+ENV RUST_LOG="info"
+ENV PORT=$_PORT
+ENV QUOTES_PATH=$_QUOTES_PATH
+
+EXPOSE $PORT
+
+ENTRYPOINT ["dumb-init"]
+CMD ["server"]
